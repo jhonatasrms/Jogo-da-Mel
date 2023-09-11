@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo de Coleta de Balões</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f0f0;
+        }
+
+        .player {
+            width: 50px;
+            height: 50px;
+            background-image: url(https://i0.wp.com/mahlerinox.com/wp-content/uploads/2020/12/REF.307-Espeto-Churrasco-Liso-Mahler-Inox-650mm.png?fit=1500%2C1500&ssl=1);
+            background-size: cover;
+            position: absolute;
+        }
+
+        .balloon {
+            width: 60px;
+            height: 60px;
+            background-image: url(https://i0.wp.com/www.multarte.com.br/wp-content/uploads/2018/12/1f388-5.png?resize=512%2C512&ssl=1);
+            background-size: cover;
+            position: absolute;
+            cursor: pointer; /* Adiciona o cursor de mão ao passar por cima */
+        }
+
+        .timer {
+            font-size: 24px;
+            font-weight: bold;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+
+        .score {
+            font-size: 24px;
+            font-weight: bold;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+        }
+
+        .record {
+            font-size: 24px;
+            font-weight: bold;
+            position: absolute;
+            top: 50px;
+            left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="player" id="player"></div>
+    <div class="timer" id="timer">Tempo: 30s</div>
+    <div class="score" id="score">Pontuação: 0</div>
+    <div class="record" id="record">Recorde: 0</div>
+
+    <script>
+        const player = document.getElementById("player");
+        const timer = document.getElementById("timer");
+        const scoreDisplay = document.getElementById("score");
+        const recordDisplay = document.getElementById("record");
+
+        let playerX = 50;
+        let playerY = 50;
+        let score = 0;
+        let timeLeft = 30;
+        let stage = 1;
+        let numBalloons = 3;
+        let balloonSpeed = 2; // Velocidade de movimento dos balões
+        let record = 0;
+
+        function movePlayer() {
+            player.style.left = playerX + "px";
+            player.style.top = playerY + "px";
+        }
+
+        function moveBalloon(balloon) {
+            const maxX = window.innerWidth - 40;
+            const maxY = window.innerHeight - 60;
+
+            let x = parseInt(balloon.style.left) || Math.floor(Math.random() * maxX);
+            let y = parseInt(balloon.style.top) || Math.floor(Math.random() * maxY);
+
+            x += balloonSpeed;
+
+            if (x > maxX) {
+                x = -40;
+                y = Math.floor(Math.random() * maxY);
+            }
+
+            balloon.style.left = x + "px";
+            balloon.style.top = y + "px";
+        }
+
+        function checkCollision(balloon) {
+            const playerRect = player.getBoundingClientRect();
+            const balloonRect = balloon.getBoundingClientRect();
+
+            if (
+                playerRect.left < balloonRect.right &&
+                playerRect.right > balloonRect.left &&
+                playerRect.top < balloonRect.bottom &&
+                playerRect.bottom > balloonRect.top
+            ) {
+                balloon.style.display = "none";
+                score++;
+
+                if (score === numBalloons) {
+                    alert("Você coletou todos os balões! Próxima etapa!");
+
+                    // Aumentar a dificuldade e iniciar uma nova etapa
+                    stage++;
+                    timeLeft = 30; // Reiniciar o tempo disponível
+                    numBalloons += stage; // Aumentar o número de balões
+                    balloonSpeed += 0.5; // Aumentar a velocidade dos balões
+
+                    // Atualizar o recorde se necessário
+                    if (score > record) {
+                        record = score;
+                        recordDisplay.textContent = "Recorde: " + record;
+                    }
+
+                    score = 0;
+                    randomizeBalloons();
+                }
+                // Atualizar a pontuação
+                scoreDisplay.textContent = "Pontuação: " + score;
+            }
+        }
+
+        function updateTimer() {
+            timer.textContent = "Tempo: " + timeLeft + "s";
+
+            if (timeLeft <= 0) {
+                alert("Tempo esgotado! Tente novamente.");
+                resetGame();
+            } else {
+                setTimeout(updateTimer, 1000);
+                timeLeft--;
+            }
+        }
+
+        function resetGame() {
+            stage = 1;
+            timeLeft = 30;
+            numBalloons = 3;
+            balloonSpeed = 2;
+            score = 0;
+            randomizeBalloons();
+            updateTimer();
+        }
+
+        document.addEventListener("mousemove", function(event) {
+            playerX = event.clientX - 25; // 25 é metade da largura do jogador
+            playerY = event.clientY - 25; // 25 é metade da altura do jogador
+            movePlayer();
+        });
+
+        // Função para criar um balão com posição aleatória
+        function createRandomBalloon() {
+            const maxX = window.innerWidth - 40;
+            const maxY = window.innerHeight - 60;
+
+            const balloon = document.createElement("div");
+            balloon.className = "balloon";
+            balloon.style.left = Math.floor(Math.random() * maxX) + "px";
+            balloon.style.top = Math.floor(Math.random() * maxY) + "px";
+            balloon.addEventListener("mouseover", function() {
+                checkCollision(balloon);
+            });
+            document.body.appendChild(balloon);
+
+            return balloon;
+        }
+
+        // Posicione os balões aleatoriamente no início do jogo
+        function randomizeBalloons() {
+            // Remova todos os balões da tela
+            const balloons = document.querySelectorAll(".balloon");
+            balloons.forEach(balloon => balloon.remove());
+
+            for (let i = 0; i < numBalloons; i++) {
+                const balloon = createRandomBalloon();
+                setInterval(function() {
+                    moveBalloon(balloon);
+                }, 100);
+            }
+        }
+
+        randomizeBalloons();
+        updateTimer();
+    </script>
+</body>
+</html>
